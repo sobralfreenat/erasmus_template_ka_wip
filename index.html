@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Formulário do Projeto M.A.E.</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            line-height: 1.6;
+        }
+        .form-section {
+            margin-bottom: 30px;
+            padding: 15px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        .form-section h2 {
+            margin-top: 0;
+        }
+        .tooltip {
+            position: relative;
+            display: inline-block;
+            cursor: pointer;
+            color: blue;
+            text-decoration: underline;
+        }
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 250px;
+            background-color: #f9f9f9;
+            color: #333;
+            text-align: left;
+            border-radius: 5px;
+            padding: 10px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            margin-left: -125px;
+            border: 1px solid #ccc;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+        }
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+        }
+        label {
+            display: block;
+            margin-top: 10px;
+        }
+        input[type="text"], textarea {
+            width: calc(100% - 120px);
+            padding: 8px;
+            margin-top: 5px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            margin-left: 10px;
+            padding: 5px 10px;
+            border: none;
+            background-color: #007BFF;
+            color: white;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .over-limit {
+            border-color: red;
+        }
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgb(0, 0, 0);
+            background-color: rgba(0, 0, 0, 0.4);
+            padding-top: 60px;
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 5% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 600px;
+            border-radius: 10px;
+        }
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+    </style>
+    <script>
+        let currentEditId = null;
+
+        function copyToClipboard(id) {
+            const input = document.getElementById(id);
+            input.select();
+            document.execCommand("copy");
+            alert("Texto copiado: " + input.value);
+        }
+
+        function checkCharacterLimit(id, limit) {
+            const input = document.getElementById(id);
+            if (input.value.length > limit) {
+                input.classList.add('over-limit');
+            } else {
+                input.classList.remove('over-limit');
+            }
+        }
+
+        function openEditModal(id, limit) {
+            currentEditId = id;
+            const input = document.getElementById(id);
+            const modal = document.getElementById("editModal");
+            const modalTextarea = document.getElementById("modalTextarea");
+            const charCount = document.getElementById("charCount");
+
+            modalTextarea.value = input.value;
+            charCount.textContent = `${modalTextarea.value.length}/${limit}`;
+            modalTextarea.setAttribute('data-limit', limit);
+            modal.style.display = "block";
+        }
+
+        function closeEditModal() {
+            const modal = document.getElementById("editModal");
+            modal.style.display = "none";
+        }
+
+        function saveEdit() {
+            const modalTextarea = document.getElementById("modalTextarea");
+            const input = document.getElementById(currentEditId);
+            input.value = modalTextarea.value;
+            checkCharacterLimit(currentEditId, modalTextarea.getAttribute('data-limit'));
+            closeEditModal();
+        }
+
+        function updateCharCount() {
+            const modalTextarea = document.getElementById("modalTextarea");
+            const charCount = document.getElementById("charCount");
+            const limit = modalTextarea.getAttribute('data-limit');
+            charCount.textContent = `${modalTextarea.value.length}/${limit}`;
+
+            if (modalTextarea.value.length > limit) {
+                charCount.style.color = 'red';
+            } else {
+                charCount.style.color = 'black';
+            }
+        }
+
+        function saveAsJSON() {
+            const formData = {};
+            document.querySelectorAll('input[type="text"], textarea').forEach(input => {
+                formData[input.name] = input.value;
+            });
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(formData, null, 2));
+            const downloadAnchorNode = document.createElement('a');
+            downloadAnchorNode.setAttribute("href", dataStr);
+            downloadAnchorNode.setAttribute("download", "formData.json");
+            document.body.appendChild(downloadAnchorNode);
+            downloadAnchorNode.click();
+            downloadAnchorNode.remove();
+        }
+
+        function loadFromJSON(event) {
+            const file = event.target.files[0];
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const data = JSON.parse(e.target.result);
+                for (const key in data) {
+                    if (data.hasOwnProperty(key)) {
+                        const input = document.querySelector(`[name="${key}"]`);
+                        if (input) {
+                            input.value = data[key];
+                            checkCharacterLimit(input.id, input.getAttribute('data-limit'));
+                        }
+                    }
+                }
+            };
+            reader.readAsText(file);
+        }
+    </script>
+</head>
+<body>
+
+    <h1>Erasmus Template KA10</h1>
+
+    <div class="form-section">
+        <h2>1. Contexto do Projeto</h2>
+        <label for="titulo-portugues">Título do Projeto (em Português)
+            <span class="tooltip">[?]
+                <span class="tooltiptext">Certifique-se de que o título está preenchido.</span>
+            </span>
+        </label>
+        <input type="text" id="titulo-portugues" name="titulo-portugues" data-limit="100" oninput="checkCharacterLimit('titulo-portugues', 100)">
+        <button onclick="copyToClipboard('titulo-portugues')">Copiar</button>
+        <button onclick="openEditModal('titulo-portugues', 100)">Editar</button>
+
+        <label for="titulo-ingles">Título do Projeto em Inglês
+            <span class="tooltip">[?]
+                <span class="tooltiptext">Forneça uma tradução adequada do título.</span>
+            </span>
+        </label>
+        <input type="text" id="titulo-ingles" name="titulo-ingles" data-limit="100" oninput="checkCharacterLimit('titulo-ingles', 100)">
+        <button onclick="copyToClipboard('titulo-ingles')">Copiar</button>
+        <button onclick="openEditModal('titulo-ingles', 100)">Editar</button>
+
+        <label for="acronimo">Acrônimo do Projeto
+            <span class="tooltip">[?]
+                <span class="tooltiptext">Crie um acrônimo que represente o projeto.</span>
+            </span>
+        </label>
+        <input type="text" id="acronimo" name="acronimo" data-limit="10" oninput="checkCharacterLimit('acronimo', 10)">
+        <button onclick="copyToClipboard('acronimo')">Copiar</button>
+        <button onclick="openEditModal('acronimo', 10)">Editar</button>
+
+        <label for="data-inicio">Data de Início do Projeto (dd/mm/aaaa)
+            <span class="tooltip">[?]
+                <span class="tooltiptext">Escolha uma data de início.</span>
+            </span>
+        </label>
+        <input type="text" id="data-inicio" name="data-inicio" data-limit="10" oninput="checkCharacterLimit('data-inicio', 10)">
+        <button onclick="copyToClipboard('data-inicio')">Copiar</button>
+        <button onclick="openEditModal('data-inicio', 10)">Editar</button>
+
+        <label for="duracao-meses">Duração Total do Projeto (Meses)
+            <span class="tooltip">[?]
+                <span class="tooltiptext">Defina a duração em meses.</span>
+            </span>
+        </label>
+        <input type="text" id="duracao-meses" name="duracao-meses" data-limit="3" oninput="checkCharacterLimit('duracao-meses', 3)">
+        <button onclick="copyToClipboard('duracao-meses')">Copiar</button>
+        <button onclick="openEditModal('duracao-meses', 3)">Editar</button>
+
+        <label for="data-termino">Data de Término do Projeto (dd/mm/aaaa)
+            <span class="tooltip">[?]
+                <span class="tooltiptext">Calcule e insira a data de término com base na duração.</span>
+            </span>
+        </label>
+        <input type="text" id="data-termino" name="data-termino" data-limit="10" oninput="checkCharacterLimit('data-termino', 10)">
+        <button onclick="copyToClipboard('data-termino')">Copiar</button>
+        <button onclick="openEditModal('data-termino', 10)">Editar</button>
+    </div>
+
+    <div class="form-section">
+        <h2>2. Objetivos, Implementação e Resultados</h2>
+        <label for="objetivos">Objetivos
+            <span class="tooltip">[?]
+                <span class="tooltiptext">Descreva claramente os objetivos do projeto (500 caracteres).</span>
+            </span>
+        </label>
+        <textarea id="objetivos" name="objetivos" data-limit="500" oninput="checkCharacterLimit('objetivos', 500)"></textarea>
+        <button onclick="copyToClipboard('objetivos')">Copiar</button>
+        <button onclick="openEditModal('objetivos', 500)">Editar</button>
+
+        <label for="implementacao">Implementação
+            <span class="tooltip">[?]
+                <span class="tooltiptext">Liste as atividades planejadas (500 caracteres).</span>
+            </span>
+        </label>
+        <textarea id="implementacao" name="implementacao" data-limit="500" oninput="checkCharacterLimit('implementacao', 500)"></textarea>
+        <button onclick="copyToClipboard('implementacao')">Copiar</button>
+        <button onclick="openEditModal('implementacao', 500)">Editar</button>
+
+        <label for="resultados">Resultados
+            <span class="tooltip">[?]
+                <span class="tooltiptext">Defina os resultados esperados (500 caracteres).</span>
+            </span>
+        </label>
+        <textarea id="resultados" name="resultados" data-limit="500" oninput="checkCharacterLimit('resultados', 500)"></textarea>
+        <button onclick="copyToClipboard('resultados')">Copiar</button>
+        <button onclick="openEditModal('resultados', 500)">Editar</button>
+
+        <label for="resumo-portugues">Resumo do Projeto em Português
+            <span class="tooltip">[?]
+                <span class="tooltiptext">Faça um resumo conciso do projeto.</span>
+            </span>
+        </label>
+        <textarea id="resumo-portugues" name="resumo-portugues" data-limit="500" oninput="checkCharacterLimit('resumo-portugues', 500)"></textarea>
+        <button onclick="copyToClipboard('resumo-portugues')">Copiar</button>
+        <button onclick="openEditModal('resumo-portugues', 500)">Editar</button>
+
+        <label for="resumo-ingles">Tradução do Resumo do Projeto em Inglês
+            <span class="tooltip">[?]
+                <span class="tooltiptext">Traduza o resumo para o inglês.</span>
+            </span>
+        </label>
+        <textarea id="resumo-ingles" name="resumo-ingles" data-limit="500" oninput="checkCharacterLimit('resumo-ingles', 500)"></textarea>
+        <button onclick="copyToClipboard('resumo-ingles')">Copiar</button>
+        <button onclick="openEditModal('resumo-ingles', 500)">Editar</button>
+    </div>
+
+    <!-- Modal for editing text -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeEditModal()">&times;</span>
+            <h2>Editar Texto</h2>
+            <textarea id="modalTextarea" oninput="updateCharCount()" style="width: 100%; height: 150px;"></textarea>
+            <p id="charCount">0/0</p>
+            <button onclick="saveEdit()">Salvar</button>
+            <button onclick="closeEditModal()">Cancelar</button>
+        </div>
+    </div>
+
+    <div class="form-section">
+        <h2>Salvar e Carregar Dados</h2>
+        <button onclick="saveAsJSON()">Salvar como JSON</button>
+        <input type="file" accept=".json" onchange="loadFromJSON(event)">
+    </div>
+
+</body>
+</html>
